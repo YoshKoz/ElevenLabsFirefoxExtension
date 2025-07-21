@@ -1,0 +1,20 @@
+{
+  "2025-07-21": {
+    "medicines": [
+      "Elvanse 20mg",
+      "Escitalopram 5mg",
+      "Dexamfetamine 5mg"
+    ],
+    "time_taken": "2025-07-21T19:18:47.749750",
+    "reminder_count": 0
+  },
+  "2025-07-22": {
+    "afternoon": {
+      "medicines": [
+        "Dexamfetamine 5mg (afternoon dose)"
+      ],
+      "time_taken": "2025-07-22T00:29:24.276168",
+      "reminder_count": 0
+    }
+  }
+}
