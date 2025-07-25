@@ -1,0 +1,13 @@
+# Ignore everything by default
+*
+
+# But don't ignore these project files
+!check_missed_meds.py
+!med_log.json
+!med_reminder.py
+!readme.md
+!testfile.txt
+!README.md
+
+# Don't ignore the .gitignore file itself
+!.gitignore
