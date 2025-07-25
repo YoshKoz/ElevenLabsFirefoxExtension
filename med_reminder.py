@@ -77,17 +77,37 @@ class MedReminder:
             print("Desktop notifications not available - showing console message")
             print(f"*** {message} ***")
     
-    def speak_reminder(self):
-        message = f"Time for your medication! {', '.join(self.medicines)}"
-        try:
-            subprocess.run(['espeak', message], check=False)
-        except FileNotFoundError:
-            try:
-                subprocess.run(['spd-say', message], check=False)
-            except FileNotFoundError:
-                print("Text-to-speech not available")
+    def play_alarm_sound(self):
+        # Try different alarm sounds in order of preference
+        sounds = [
+            "/usr/share/sounds/freedesktop/stereo/complete.oga",
+            "/usr/share/sounds/freedesktop/stereo/dialog-information.oga",
+            "/usr/share/sounds/sound-icons/piano-3.wav",
+            "/usr/share/sounds/sound-icons/chord-7.wav"
+        ]
+        
+        for sound in sounds:
+            if os.path.exists(sound):
+                try:
+                    # Play sound multiple times for urgency
+                    for _ in range(3):
+                        subprocess.run(['paplay', sound], check=False)
+                        time.sleep(0.5)
+                    return
+                except FileNotFoundError:
+                    # Try aplay as backup
+                    try:
+                        subprocess.run(['aplay', sound], check=False)
+                        return
+                    except FileNotFoundError:
+                        continue
+        
+        # Fallback to system beep if no sounds work
+        print("\a" * 5)  # Terminal bell
     
     def show_gui_reminder(self):
+        completed = [False]  # Use list to allow modification in nested function
+        
         def on_taken():
             selected = []
             for i, var in enumerate(med_vars):
@@ -97,11 +117,10 @@ class MedReminder:
             if len(selected) == len(self.medicines):
                 self.save_log(selected)
                 messagebox.showinfo("Success", "Great! All medications logged. See you tomorrow!")
+                completed[0] = True
                 root.destroy()
-                return True
             else:
                 messagebox.showwarning("Incomplete", f"Please check all {len(self.medicines)} medications")
-                return False
         
         def on_snooze():
             root.destroy()
@@ -151,7 +170,7 @@ class MedReminder:
         
         try:
             root.mainloop()
-            return False  # Window was closed without completing
+            return completed[0]  # Return True if medications were taken
         except tk.TclError:
             return False
     
@@ -163,6 +182,11 @@ class MedReminder:
         print(f"Starting medication reminder cycle...")
         
         while self.reminder_count < self.max_reminders:
+            # Check if medications were taken while script was running
+            if self.already_taken_today():
+                print("Medications were taken - stopping reminders!")
+                return
+                
             print(f"Reminder #{self.reminder_count + 1}")
             
             # Show notifications with increasing urgency
@@ -170,10 +194,10 @@ class MedReminder:
                 self.show_desktop_notification("normal")
             elif self.reminder_count < 3:
                 self.show_desktop_notification("normal")
-                self.speak_reminder()
+                self.play_alarm_sound()
             else:
                 self.show_desktop_notification("critical")
-                self.speak_reminder()
+                self.play_alarm_sound()
             
             # Show GUI - this blocks until user responds
             if self.show_gui_reminder():
